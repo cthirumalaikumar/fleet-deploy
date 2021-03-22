@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: telegraf-ds
+  labels:
+    app.kubernetes.io/name: telegraf-ds
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: telegraf-ds
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: telegraf-ds
+      annotations:
+        checksum/config: 56acb45756ee3a2c602a81535076cee1ef24ee83b61fc2c5ee9ba56b57bed8e8
+    spec:
+      serviceAccountName: telegraf-ds
+      containers:
+        - name: telegraf-ds
+          image: "telegraf:1.14"
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 0.1
+              memory: 256Mi
+          env:
+            - name: HOSTIP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: HOSTIP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: HOST_PROC
+              value: /rootfs/proc
+            - name: HOST_SYS
+              value: /rootfs/sys
+          volumeMounts:
+            - name: varrunutmpro
+              mountPath: /var/run/utmp
+              readOnly: true
+            - name: sysro
+              mountPath: /rootfs/sys
+              readOnly: true
+            - name: procro
+              mountPath: /rootfs/proc
+              readOnly: true
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: config
+              mountPath: /etc/telegraf
+      volumes:
+        - name: sysro
+          hostPath:
+            path: /sys
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: procro
+          hostPath:
+            path: /proc
+        - name: varrunutmpro
+          hostPath:
+            path: /var/run/utmp
+        - name: config
+          configMap:
+            name: telegraf-ds

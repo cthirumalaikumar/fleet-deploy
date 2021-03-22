@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app.kubernetes.io/name: influxdb
+  name: influxdb-create-admin-user
+spec:
+  activeDeadlineSeconds: 90
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: influxdb
+    spec:
+      containers:
+        - name: influxdb-create-admin-user
+          image: "quay.io/influxdb/influxdb:2.0.0-beta"
+          env:
+            - name: INFLUXDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-auth
+                  key: admin-password
+            - name: INFLUXDB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-auth
+                  key: admin-token
+          command:
+            - bash
+          args:
+            - -c
+            - |
+              influx setup -f \
+              --host http://influxdb \
+              -o influxdata \
+              -b default \
+              -u admin \
+              -p ${INFLUXDB_PASSWORD} \
+              -t ${INFLUXDB_TOKEN}
+      restartPolicy: OnFailure

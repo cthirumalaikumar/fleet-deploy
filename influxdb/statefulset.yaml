@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: influxdb
+  labels:
+    app.kubernetes.io/name: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: influxdb
+  serviceName: "influxdb"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: influxdb
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: influxdb
+      containers:
+        - name: influxdb
+          image: "quay.io/influxdb/influxdb:2.0.0-beta"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9999
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          volumeMounts:
+            - name: data
+              mountPath: /root/.influxdbv2
+          resources: {}
